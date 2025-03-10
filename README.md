@@ -35,7 +35,50 @@ $ docker compose up -d
 
 Each time you restart, you can wipe the old data using `./clean.sh`.
 
-Next, you can inspect the logs of the different services launched. 
+## Using Development Binaries
+
+By default, this setup uses official Prysm images. However, you can also use custom-built Prysm binaries for development:
+
+1. Compile the binaries:
+   
+   **Mac users**: To ensure compatibility with the Docker environment, you need to compile the binaries within a Docker container from the Prysm repository:
+   
+   ```bash
+   # First, clone the Prysm repository and navigate to it
+   git clone https://github.com/prysmaticlabs/prysm && cd prysm
+   
+   # Compile the binaries within a Docker container
+   docker run -v $(pwd):/workspace -w /workspace --rm -it golang:1.23-bookworm /bin/bash -c 'mkdir -p bin && go build -v -o bin/beacon-chain ./cmd/beacon-chain && go build -v -o bin/validator ./cmd/validator'
+   
+   # Copy the compiled binaries to the eth-pos-devnet/bin directory
+   cp bin/beacon-chain bin/validator /path/to/eth-pos-devnet/bin/
+   ```
+   
+   You should now have the following binaries in the `eth-pos-devnet/bin/` directory:
+   - `bin/beacon-chain` - The beacon chain binary
+   - `bin/validator` - The validator binary
+
+2. Run using the development configuration:
+```bash
+docker compose -f docker-compose.yml -f dev/docker-compose.dev.yml up -d
+```
+
+To rebuild the images after making changes to your binaries:
+```bash
+docker compose -f docker-compose.yml -f dev/docker-compose.dev.yml build
+```
+
+The repository includes:
+- `bin/` - Directory for compiled Prysm binaries (gitignored)
+- `dev/` - Contains Dockerfiles and compose overrides for development
+  - `Dockerfile.beacon-chain` - Dockerfile for beacon chain binary
+  - `Dockerfile.validator` - Dockerfile for validator binary
+  - `docker-compose.dev.yml` - Compose override for development
+- `docker-compose.yml` - Main configuration using official images
+
+## Monitoring
+
+You can inspect the logs of the different services launched:
 
 ```
 docker logs eth-pos-devnet-geth-1 -f

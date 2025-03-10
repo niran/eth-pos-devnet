@@ -1,0 +1,23 @@
+# Development override for eth-pos-devnet
+# 
+# This file is meant to be used alongside the main docker-compose.yml file
+# to enable development with custom-built Prysm binaries. To use it, run:
+#   docker compose -f docker-compose.yml -f dev/docker-compose.dev.yml up
+#
+# The binaries should be placed in the bin/ directory:
+#   - bin/beacon-chain
+#   - bin/validator
+
+version: "3.9"
+services:
+  beacon-chain:
+    build:
+      context: .
+      dockerfile: dev/Dockerfile.beacon-chain
+    image: local/prysm-beacon-chain:dev
+
+  validator:
+    build:
+      context: .
+      dockerfile: dev/Dockerfile.validator
+    image: local/prysm-validator:dev 
