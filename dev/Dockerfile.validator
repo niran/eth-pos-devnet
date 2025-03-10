@@ -12,10 +12,4 @@ RUN apt-get update && \
     vim \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the locally built validator binary
-COPY bin/validator /usr/local/bin/
-
-# Set the binary as executable
-RUN chmod +x /usr/local/bin/validator
-
 ENTRYPOINT ["validator"] 

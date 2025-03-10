@@ -14,10 +14,14 @@ services:
     build:
       context: .
       dockerfile: dev/Dockerfile.beacon-chain
-    image: local/prysm-beacon-chain:dev
+    image: prysm-beacon-chain:dev
+    volumes:
+      - ./bin/beacon-chain:/usr/local/bin/beacon-chain
 
   validator:
     build:
       context: .
       dockerfile: dev/Dockerfile.validator
-    image: local/prysm-validator:dev 
+    image: prysm-validator:dev
+    volumes:
+      - ./bin/validator:/usr/local/bin/validator 
