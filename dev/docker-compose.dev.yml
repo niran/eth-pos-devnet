@@ -25,3 +25,61 @@ services:
     image: prysm-validator:dev
     volumes:
       - ./bin/validator:/usr/local/bin/validator 
+
+  # Override the Geth settings for development
+  geth:
+    command:
+      # Development-specific flags for local access
+      - --http.corsdomain=http://localhost:*
+      - --http.vhosts=localhost,geth
+      - --ws.origins=localhost,geth
+      - --authrpc.vhosts=localhost,geth
+      
+      # Base configuration flags (copied from main compose file)
+      - --http
+      - --http.api=eth,net,web3
+      - --http.addr=0.0.0.0
+      - --ws
+      - --ws.api=eth,net,web3
+      - --ws.addr=0.0.0.0
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.jwtsecret=/execution/jwtsecret
+      - --datadir=/execution
+      - --ipcdisable
+      - --unlock=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --password=/execution/geth_password.txt
+      - --nodiscover
+      - --syncmode=full
+
+  # Health check container to wait for geth RPC
+  wait-for-geth:
+    image: curlimages/curl:latest
+    command: [
+      "sh", "-c",
+      "while ! curl -s -X POST -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' http://geth:8545 | grep -q result; do echo 'Waiting for geth RPC...'; sleep 5; done && echo 'Geth RPC is ready!'"
+    ]
+    depends_on:
+      geth:
+        condition: service_started
+
+  spamoor:
+    image: ethpandaops/spamoor
+    command:
+      - blobs
+      # Private key for Prysm's default testing account 0x123463a4b065722e99115d6c222f267d9cabb524
+      - --privkey=2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622
+      - --rpchost=http://geth:8545
+      - --throughput=1
+      - --count=100
+      - --basefee=20
+      - --tipfee=2
+      - --verbose
+    depends_on:
+      wait-for-geth:
+        condition: service_completed_successfully
+      beacon-chain:
+        condition: service_started
+    environment:
+      - ETH_RPC_URL=http://geth:8545
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
